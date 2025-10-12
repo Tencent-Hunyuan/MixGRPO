@@ -181,3 +181,6 @@ If you find MixGRPO useful for your research and applications, please cite using
       url={https://arxiv.org/abs/2507.21802}, 
 }
 ```
+
+## 🌟 Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=Tencent-Hunyuan/MixGRPO&type=Date)](https://www.star-history.com/#Tencent-Hunyuan/MixGRPO&Date)
