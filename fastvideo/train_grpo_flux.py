@@ -151,9 +151,11 @@ def grpo_one_step(
                 index=i,
                 prev_sample=pre_latents.to(torch.float32),
                 determistic=False,
+                sde_type=args.sde_type,
+                noise_level=args.noise_level,
             )
         else:
-            z, pred_original, log_prob = dance_grpo_step(pred, latents.to(torch.float32), args.eta, sigma_schedule, i, prev_sample=pre_latents.to(torch.float32), grpo=True, sde_solver=True)
+            z, pred_original, log_prob = dance_grpo_step(pred, latents.to(torch.float32), args.eta, sigma_schedule, i, prev_sample=pre_latents.to(torch.float32), grpo=True, sde_solver=True, sde_type=args.sde_type, noise_level=args.noise_level)
     elif "dpmsolver" in args.dpm_algorithm_type:
         z, pred_original, log_prob = dpm_step(
             args,
@@ -1285,6 +1287,19 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="whether to use flow grpo sampling, True for MixGRPO, False for DanceGRPO",
+    )
+    parser.add_argument(
+        "--sde_type",
+        type=str,
+        default="sde",
+        choices=["sde", "cps"],
+        help="sampling noise type: 'sde' (default) or 'cps' (Coefficients-Preserving Sampling)",
+    )
+    parser.add_argument(
+        "--noise_level",
+        type=float,
+        default=None,
+        help="noise level for CPS/SDE; when sde_type is 'cps' and None, 0.8 is used internally",
     )
     parser.add_argument(
         "--drop_last_sample",
