@@ -31,7 +31,7 @@
 </div>      
 
 ## 📝 News
-- [2026/02/02] We supported [Coefficients-Preserving Sampling](https://arxiv.org/abs/2509.05952) (CPS) as a more principled alternative to standard SDE sampling. Comparison tables and enhanced visualization results using CPS have been updated in the [paper](https://arxiv.org/abs/2507.21802) !
+- [2026/02/03] We supported [Coefficients-Preserving Sampling](https://arxiv.org/abs/2509.05952) (CPS) as a more principled alternative to standard SDE sampling. Comparison tables and enhanced visualization results using CPS have been updated in the [paper](https://arxiv.org/abs/2507.21802) !
 - [2025/10/02] We have updated the comparison and visualization results with Flow-GRPO, Flow-DPO (offline), and Flow-DPO (online) on SD3.5-M LoRA in the [paper](https://arxiv.org/abs/2507.21802) !
 - [2025/7/30] We released the [model checkpoint](https://huggingface.co/tulvgengenr/MixGRPO) fine-tuned based on [FLUX.1 Dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) using the MixGRPO algorithm, with [HPSv2](https://github.com/tgxs002/HPSv2), [ImageReward](https://huggingface.co/zai-org/ImageReward), and [Pick Score](https://github.com/yuvalkirstain/PickScore) as multi-rewards !
 - [2025/7/30] We released the [paper](https://arxiv.org/abs/2507.21802) and [code](https://github.com/Tencent-Hunyuan/MixGRPO) !
