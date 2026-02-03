@@ -90,12 +90,14 @@ def run_sample_step(
                     index=i,
                     prev_sample=None,
                     determistic=determistic[i],
+                    sde_type=getattr(args, "sde_type", "sde"),
+                    noise_level=getattr(args, "noise_level", None),
                 )
             else:
                 if determistic[i]:
-                    z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=False)
+                    z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=False, sde_type=getattr(args, "sde_type", "sde"), noise_level=getattr(args, "noise_level", None))
                 else:
-                    z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=True)
+                    z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=True, sde_type=getattr(args, "sde_type", "sde"), noise_level=getattr(args, "noise_level", None))
         elif "dpmsolver" in args.dpm_algorithm_type:
             if args.dpm_apply_strategy == "all":
                 z, pred_original, log_prob = dpm_step(
@@ -123,14 +125,16 @@ def run_sample_step(
                             index=i,
                             prev_sample=None,
                             determistic=determistic[i],
+                            sde_type=getattr(args, "sde_type", "sde"),
+                            noise_level=getattr(args, "noise_level", None),
                         )
                         dpm_state.update_lower_order()
 
                     else:
                         if determistic[i]:
-                            z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=False)
+                            z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=False, sde_type=getattr(args, "sde_type", "sde"), noise_level=getattr(args, "noise_level", None))
                         else:
-                            z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=True)
+                            z, pred_original, log_prob = dance_grpo_step(pred, z.to(torch.float32), args.eta, sigmas=sigma_schedule, index=i, prev_sample=None, grpo=True, sde_solver=True, sde_type=getattr(args, "sde_type", "sde"), noise_level=getattr(args, "noise_level", None))
                 else:
                     z, pred_original, log_prob = dpm_step(
                         args,
@@ -163,51 +167,72 @@ def flow_grpo_step(
     prev_sample: torch.Tensor,
     generator: Optional[torch.Generator] = None,
     determistic: bool = False,
+    sde_type: str = "sde",
+    noise_level: Optional[float] = None,
 ):
     device = model_output.device
-    # step_index = [self.index_for_timestep(t) for t in timestep]
-    # prev_step_index = [step+1 for step in step_index]
     sigma = sigmas[index].to(device)
     sigma_prev = sigmas[index + 1].to(device)
     sigma_max = sigmas[1].item()
-    dt = sigma_prev - sigma # neg dt
+    dt = sigma_prev - sigma  # neg dt
 
-    pred_original_sample = latents - sigma * model_output
- 
-    std_dev_t = torch.sqrt(sigma / (1 - torch.where(sigma == 1, sigma_max, sigma))) * eta
-
-    # our sde
     if prev_sample is not None and generator is not None:
         raise ValueError(
             "Cannot pass both generator and prev_sample. Please make sure that either `generator` or"
             " `prev_sample` stays `None`."
         )
-    
-    prev_sample_mean = latents*(1+std_dev_t**2/(2*sigma)*dt)+model_output*(1+std_dev_t**2*(1-sigma)/(2*sigma))*dt
-    
-    if prev_sample is None:
-        variance_noise = randn_tensor(
-            model_output.shape, 
-            generator=generator, 
-            device=device, 
-            dtype=model_output.dtype
+
+    if sde_type == "sde":
+        _noise_level = eta if noise_level is None else noise_level
+        std_dev_t = torch.sqrt(sigma / (1 - torch.where(sigma == 1, sigma_max, sigma))) * _noise_level
+        pred_original_sample = latents - sigma * model_output
+        prev_sample_mean = latents * (1 + std_dev_t**2 / (2 * sigma) * dt) + model_output * (1 + std_dev_t**2 * (1 - sigma) / (2 * sigma)) * dt
+
+        if prev_sample is None:
+            variance_noise = randn_tensor(
+                model_output.shape,
+                generator=generator,
+                device=device,
+                dtype=model_output.dtype,
+            )
+            prev_sample = prev_sample_mean + std_dev_t * torch.sqrt(-1 * dt) * variance_noise
+
+        if determistic:
+            prev_sample = latents + dt * model_output
+
+        log_prob = (
+            -((prev_sample.detach() - prev_sample_mean) ** 2) / (2 * ((std_dev_t * torch.sqrt(-1 * dt)) ** 2))
+            - torch.log(std_dev_t * torch.sqrt(-1 * dt))
+            - torch.log(torch.sqrt(2 * torch.as_tensor(math.pi, device=device)))
         )
-        prev_sample = prev_sample_mean + std_dev_t * torch.sqrt(-1*dt) * variance_noise
-    
-    # No noise is added during evaluation
-    if determistic:
-        prev_sample = latents + dt * model_output
-    
-    log_prob = (
-        -((prev_sample.detach() - prev_sample_mean) ** 2) / (2 * ((std_dev_t * torch.sqrt(-1*dt))**2))
-        - torch.log(std_dev_t * torch.sqrt(-1*dt))
-        - torch.log(torch.sqrt(2 * torch.as_tensor(math.pi)))
-    )
+        log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
+        return prev_sample, pred_original_sample, log_prob, prev_sample_mean, std_dev_t * torch.sqrt(-1 * dt)
 
-    # mean along all but batch dimension
-    log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
+    elif sde_type == "cps":
+        _noise_level = (0.8 if noise_level is None else noise_level)
+        std_dev_t = sigma_prev * math.sin(_noise_level * math.pi / 2)
+        pred_original_sample = latents - sigma * model_output
+        noise_estimate = latents + model_output * (1 - sigma)
+        prev_sample_mean = pred_original_sample * (1 - sigma_prev) + noise_estimate * torch.sqrt(sigma_prev**2 - std_dev_t**2)
 
-    return prev_sample, pred_original_sample, log_prob, prev_sample_mean, std_dev_t * torch.sqrt(-1*dt)
+        if prev_sample is None:
+            variance_noise = randn_tensor(
+                model_output.shape,
+                generator=generator,
+                device=device,
+                dtype=model_output.dtype,
+            )
+            prev_sample = prev_sample_mean + std_dev_t * variance_noise
+
+        if determistic:
+            prev_sample = latents + dt * model_output
+
+        log_prob = -((prev_sample.detach() - prev_sample_mean) ** 2)
+        log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
+        return prev_sample, pred_original_sample, log_prob, prev_sample_mean, std_dev_t
+
+    else:
+        raise ValueError(f"Unsupported sde_type: {sde_type}. Must be 'sde' or 'cps'.")
 
 def dance_grpo_step(
     model_output: torch.Tensor,
@@ -218,39 +243,62 @@ def dance_grpo_step(
     prev_sample: torch.Tensor,
     grpo: bool,
     sde_solver: bool,
+    sde_type: str = "sde",
+    noise_level: Optional[float] = None,
 ):
-    sigma = sigmas[index]
-    dsigma = sigmas[index + 1] - sigma # neg dt
-    prev_sample_mean = latents + dsigma * model_output
-
+    device = latents.device
+    sigma = sigmas[index].to(device) if sigmas[index].device != device else sigmas[index]
+    sigma_prev = sigmas[index + 1].to(device) if sigmas[index + 1].device != device else sigmas[index + 1]
+    dsigma = sigma_prev - sigma  # neg dt
     pred_original_sample = latents - sigma * model_output
 
-    delta_t = sigma - sigmas[index + 1] # pos -dt
-    std_dev_t = eta * math.sqrt(delta_t)
+    if sde_type == "sde":
+        prev_sample_mean = latents + dsigma * model_output
+        delta_t = sigma - sigma_prev  # pos -dt
+        _noise_level = eta if noise_level is None else noise_level
+        std_dev_t = _noise_level * torch.sqrt(delta_t)
 
-    if sde_solver:
-        score_estimate = -(latents-pred_original_sample*(1 - sigma))/sigma**2
-        log_term = -0.5 * eta**2 * score_estimate
-        prev_sample_mean = prev_sample_mean + log_term * dsigma
-
-    if grpo and prev_sample is None:
         if sde_solver:
-            prev_sample = prev_sample_mean + torch.randn_like(prev_sample_mean) * std_dev_t 
+            score_estimate = -(latents - pred_original_sample * (1 - sigma)) / sigma**2
+            log_term = -0.5 * _noise_level**2 * score_estimate
+            prev_sample_mean = prev_sample_mean + log_term * dsigma
+
+        if grpo and prev_sample is None:
+            if sde_solver:
+                prev_sample = prev_sample_mean + torch.randn_like(prev_sample_mean, device=device) * std_dev_t
+            else:
+                prev_sample = prev_sample_mean
+
+        if grpo:
+            log_prob = (
+                -((prev_sample.detach().to(torch.float32) - prev_sample_mean.to(torch.float32)) ** 2) / (2 * (std_dev_t**2))
+            )
+            log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
+            return prev_sample, pred_original_sample, log_prob
         else:
-            prev_sample = prev_sample_mean
+            return prev_sample_mean, pred_original_sample
 
-    if grpo:
-        # log prob of prev_sample given prev_sample_mean and std_dev_t
-        log_prob = (
-            -((prev_sample.detach().to(torch.float32) - prev_sample_mean.to(torch.float32)) ** 2) / (2 * (std_dev_t**2))
-        )
-        - math.log(std_dev_t)- torch.log(torch.sqrt(2 * torch.as_tensor(math.pi)))
+    elif sde_type == "cps":
+        _noise_level = 0.8 if noise_level is None else noise_level
+        std_dev_t = sigma_prev * math.sin(_noise_level * math.pi / 2)
+        noise_estimate = latents + model_output * (1 - sigma)
+        prev_sample_mean = pred_original_sample * (1 - sigma_prev) + noise_estimate * torch.sqrt(sigma_prev**2 - std_dev_t**2)
 
-        # mean along all but batch dimension
-        log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
-        return prev_sample, pred_original_sample, log_prob
+        if grpo and prev_sample is None:
+            if sde_solver:
+                prev_sample = prev_sample_mean + std_dev_t * torch.randn_like(prev_sample_mean, device=device, dtype=prev_sample_mean.dtype)
+            else:
+                prev_sample = prev_sample_mean
+
+        if grpo:
+            log_prob = -((prev_sample.detach().to(torch.float32) - prev_sample_mean.to(torch.float32)) ** 2)
+            log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))
+            return prev_sample, pred_original_sample, log_prob
+        else:
+            return prev_sample_mean, pred_original_sample
+
     else:
-        return prev_sample_mean,pred_original_sample
+        raise ValueError(f"Unsupported sde_type: {sde_type}. Must be 'sde' or 'cps'.")
 
 @dataclass
 class DPMState:

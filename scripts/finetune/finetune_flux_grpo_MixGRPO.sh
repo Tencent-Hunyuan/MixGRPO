@@ -71,6 +71,10 @@ gradient_accumulation_steps=3
 timestep_fraction=0.6
 frozen_init_timesteps=-1
 
+# SDE/CPS Sampling Parameters
+sde_type="sde" # "sde", "cps"
+noise_level=None # None for CPS, 0.8 for SDE
+
 # DPM
 dpm_algorithm_type="null" # "null", "dpm-solver", "dpm-solver++"
 dpm_apply_strategy="post"
@@ -186,6 +190,8 @@ pdsh -R ssh -w ^$hostfile "cd $cur_path ;
             --image_reward_weight $image_reward_weight \
             --pick_score_weight $pick_score_weight \
             --unified_reward_weight $unified_reward_weight \
+            --sde_type $sde_type \
+            --noise_level $noise_level \
             --dpm_algorithm_type $dpm_algorithm_type \
             --dpm_apply_strategy $dpm_apply_strategy \
             --dpm_post_compress_ratio $dpm_post_compress_ratio \
