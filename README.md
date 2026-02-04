@@ -36,9 +36,6 @@
 - [2025/7/30] We released the [model checkpoint](https://huggingface.co/tulvgengenr/MixGRPO) fine-tuned based on [FLUX.1 Dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) using the MixGRPO algorithm, with [HPSv2](https://github.com/tgxs002/HPSv2), [ImageReward](https://huggingface.co/zai-org/ImageReward), and [Pick Score](https://github.com/yuvalkirstain/PickScore) as multi-rewards !
 - [2025/7/30] We released the [paper](https://arxiv.org/abs/2507.21802) and [code](https://github.com/Tencent-Hunyuan/MixGRPO) !
 
-## ✅ TODO
-- [x] Take comparison with the [FlowGRPO](https://github.com/yifan123/flow_grpo) and update our technical report.
-
 ## 🚀 Quick Start
 
 ### Installation
