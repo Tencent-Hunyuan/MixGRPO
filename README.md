@@ -16,7 +16,8 @@
     <a href="" target="_blank">Yinping Ma</a><sup>3</sup>,</span>
     <a href="https://scholar.google.com/citations?hl=en&user=0ZZamLoAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Chun Fan</a><sup>3</sup>,</span>
     <a href="" target="_blank">Miles Yang</a><sup>1</sup>,</span>
-    <a href="https://scholar.google.com/citations?user=igtXP_kAAAAJ&hl=en" target="_blank">Zhao Zhong</a><sup>1</sup></span>
+    <a href="https://scholar.google.com/citations?user=igtXP_kAAAAJ&hl=en" target="_blank">Zhao Zhong</a><sup>1</sup>,</span>
+    <a href="https://scholar.google.com/citations?user=FJwtMf0AAAAJ&hl=zh-CN&oi=ao" target="_blank">Liefeng Bo</a><sup>1</sup></span>
 </div>
 
 <div>
