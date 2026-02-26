@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 try:
     import ImageReward as RM
-except:
+except ImportError:
     raise Warning("ImageReward is required to be installed (`pip install image-reward`) when using ImageReward for post-training.")
 
 
