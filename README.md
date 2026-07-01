@@ -13,6 +13,7 @@
     <a href="https://scholar.google.com/citations?user=lQsMoJsAAAAJ&hl=en&oi=ao" target="_blank">Junzhe Li</a><sup>1,</sup><sup>2,</sup><sup>3</sup><sup>*</sup>,</span>
     <a href="https://scholar.google.com/citations?user=TSMchWcAAAAJ&hl=en&oi=ao" target="_blank">Yutao Cui</a><sup>1</sup><sup>*</sup>, </span>
     <a href="https://scholar.google.com/citations?hl=en&user=TaM4e4wAAAAJ" target="_blank">Tao Huang</a><sup>1</sup><sup>*</sup>,</span>
+    <a href="https://scholar.google.com/citations?user=gsOklKAAAAAJ&hl=zh-CN&oi=ao" target="_blank">Weijie Kong</a><sup>1</sup>,</span>
     <a href="" target="_blank">Yinping Ma</a><sup>3</sup>,</span>
     <a href="https://scholar.google.com/citations?hl=en&user=0ZZamLoAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Chun Fan</a><sup>3</sup>,</span>
     <a href="" target="_blank">Miles Yang</a><sup>1</sup>,</span>
