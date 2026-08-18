@@ -184,4 +184,4 @@ If you find MixGRPO useful for your research and applications, please cite using
 ```
 
 ## 🌟 Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=Tencent-Hunyuan/MixGRPO&type=Date)](https://www.star-history.com/#Tencent-Hunyuan/MixGRPO&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=Tencent-Hunyuan/MixGRPO&type=Date)](https://star-history.dera.page/#Tencent-Hunyuan/MixGRPO&Date)
